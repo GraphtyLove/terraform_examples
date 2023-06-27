@@ -14,9 +14,19 @@ variable "aws_secret_key" {
   type        = string
 }
 
+variable "bucket_name" {
+    description = "The name of the s3 bucket"
+    type        = string
+}
 
-variable "ec2_instance_type" {
-    description = "The instance type to be used for the EC2. This will determine the VM's specs."
-    type = string
-    default = "t2.micro"
+variable "days_til_archive" {
+    description = "The number of days before the data is archived"
+    type        = number
+    default     = 90
+}
+
+variable "days_til_deletion" {
+    description = "The number of days before the data is deleted"
+    type        = number
+    default     = 180
 }
