@@ -16,6 +16,8 @@ Below is a description of each file in the project:
 
 4. `data.tf`: This file contains the configuration to retrieve the latest Amazon Linux AMI ID for the specified AWS region.
 
+5. `.terraform.lock.hcl`: This file is used by Terraform to track the provider versions used in the project. This is important to ensure that the project can be used consistently across different environments.
+
 ## How to Use
 
 To use this project, follow these steps:
