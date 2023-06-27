@@ -99,6 +99,8 @@ You can read the complete official documentation here:
 
 # CLI AWS EC2 Instance
 
+![AWS cli](https://miro.medium.com/v2/resize:fit:1017/0*tHezTGVhyqoXDtKu.png)
+
 If we wanted to do the same with aws cli, we would have to do the following:
 
 ## Create the VPC
@@ -138,3 +140,5 @@ aws ec2 associate-address --instance-id i-xxxxxxxx --allocation-id eipalloc-xxxx
 ```
 
 Note that the AWS CLI commands are more imperative and less declarative compared to Terraform. This means you need to manage the dependencies (like making sure the security group is created before launching the instance) yourself. In Terraform, you declare your desired state, and Terraform figures out the dependencies and creates the resources in the correct order.
+
+If you want to automate this process, you would need to parse the outputs of the commands and pass them as inputs to the next command. This is possible, but it's not as straightforward as with Terraform.
