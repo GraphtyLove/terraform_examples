@@ -2,11 +2,7 @@
 
 ![Terraform Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Terraform_Logo.svg/1280px-Terraform_Logo.svg.png)
 
-This project contains the Terraform configuration files to provision an Amazon s3 bucket on AWS.
-
-We also want to change each object's **storage class to `GLACIER` after 3 month**. The files will be **deleted after 6 month**.
-
-This allow us to minimize the costs. The files sould not be accessed after 3 month except in case of an audit. After 6 months, we don't need the files anymore.
+This project contains the Terraform configuration files to provision an Amazon EC2 instance on AWS.
 
 
 ## terraform.tfvars
@@ -21,14 +17,46 @@ aws_region = "eu-west-1"
 aws_access_key = "XXXXXXXXX"
 aws_secret_key = "XXXXXXXXX"
 
-# ec2 details
-ec2_instance_type = "t2.micro"
+# s3 bucket details
+bucket_name = "becode_files"
+days_til_archive = 90
+days_til_delete = 180
 ```
 
 
-## Usage
-Generate the key-pair to be used to connect to the instance:
+## Usage`
 
+Plan the changes to be made:
+
+```bash
+terraform plan
+```
+
+If everything is ok, apply the changes:
+
+```bash
+terraform apply
+```
+
+
+You can now see the resources' state with the command:
+
+```bash
+terraform state list
+```
+
+And see the details of the resources with the command:
+
+```bash
+terraform show
+```
+
+
+When you are done with your tests, **don't forget to delete the resources** with the command:
+
+```bash
+terraform destroy
+```
 
 
 ## Documentation
@@ -36,8 +64,65 @@ Generate the key-pair to be used to connect to the instance:
 You can read the complete official documentation here: 
 [Terraforn aws ec2 documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance).
 
-# CLI AWS EC2 Instance
+# CLI AWS s3 Bucket
+```bash
+#!/bin/bash
 
-![AWS cli](https://miro.medium.com/v2/resize:fit:1017/0*tHezTGVhyqoXDtKu.png)
+# Define variables
+BUCKET_NAME="my_bucket"
+REGION="us-west-2"
 
-If we wanted to do the same with aws cli, we would have to do the following:
+# Create the bucket
+aws s3api create-bucket --bucket $BUCKET_NAME --region $REGION --acl public-read
+
+# Add CORS configuration
+aws s3api put-bucket-cors --bucket $BUCKET_NAME --cors-configuration '{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["PUT", "POST", "GET"],
+      "AllowedOrigins": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}'
+
+# Add bucket policy
+aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy '{
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Sid":"PublicReadGetObject",
+      "Effect":"Allow",
+      "Principal": "*",
+      "Action":["s3:GetObject"],
+      "Resource":["arn:aws:s3:::'$BUCKET_NAME'/*"]
+    }
+  ]
+}'
+
+# Add lifecycle configuration
+aws s3api put-bucket-lifecycle-configuration --bucket $BUCKET_NAME --lifecycle-configuration '{
+  "Rules": [
+    {
+      "ID": "glacier-and-delete",
+      "Status": "Enabled",
+      "Transitions": [
+        {
+          "Days": 90,
+          "StorageClass": "GLACIER"
+        }
+      ],
+      "Expiration": {
+        "Days": 180
+      }
+    }
+  ]
+}'
+```
+
+
+Note that the AWS CLI commands are more imperative and less declarative compared to Terraform. This means you need to manage the dependencies (like making sure the security group is created before launching the instance) yourself. In Terraform, you declare your desired state, and Terraform figures out the dependencies and creates the resources in the correct order.
+
+If you want to automate this process, you would need to parse the outputs of the commands and pass them as inputs to the next command. This is possible, but it's not as straightforward as with Terraform.
