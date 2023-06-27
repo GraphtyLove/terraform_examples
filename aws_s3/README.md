@@ -62,7 +62,7 @@ terraform destroy
 ## Documentation
 
 You can read the complete official documentation here: 
-[Terraforn aws ec2 documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance).
+[Terraforn aws ec2 documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket).
 
 # CLI AWS s3 Bucket
 ```bash
