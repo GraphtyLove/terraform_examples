@@ -4,36 +4,137 @@
 
 This project contains the Terraform configuration files to provision an Amazon EC2 instance on AWS.
 
-## Files
 
-Below is a description of each file in the project:
+## terraform.tfvars
 
-1. `main.tf`: This file contains the main set of configuration for your Terraform project. In our case, it specifies the AWS provider and contains the configuration to create an EC2 instance.
+Creat a `terraform.tfvars` file and define the desired variables.
 
-2. `variables.tf`: This file is used for the declaration of variables that are used in the `main.tf` file. It contains the declarations for AWS region, access key, and secret key variables.
+Example file:
 
-3. `terraform.tfvars`: This file is used to set the values for the variables declared in `variables.tf`. This file should not be committed to version control if it contains sensitive information like AWS access keys.
+```terraform
+# AWS
+region = "eu-west-1"
+aws_access_key = "XXXXXXXXX"
+aws_secret_key = "XXXXXXXXX"
 
-4. `data.tf`: This file contains the configuration to retrieve the latest Amazon Linux AMI ID for the specified AWS region.
+# ec2 details
+ec2_instance_type = "t2.micro"
+```
 
-5. `.terraform.lock.hcl`: This file is used by Terraform to track the provider versions used in the project. This is important to ensure that the project can be used consistently across different environments.
 
-## How to Use
+## Usage
+Generate the key-pair to be used to connect to the instance:
 
-To use this project, follow these steps:
+```bash
+ssh-keygen -t rsa -b 4096 -f my_keypair
+```
 
-1. Clone the repository to your local machine.
+Plan the changes to be made:
 
-2. Update the `terraform.tfvars` file with your AWS credentials and desired region.
+```bash
+terraform plan
+```
 
-3. Open a terminal and navigate to the directory containing the Terraform files.
+If everything is ok, apply the changes:
 
-4. Run `terraform init` to initialize your Terraform workspace.
+```bash
+terraform apply
+```
 
-5. Run `terraform plan` to see the changes that will be made.
+You should receive an input like this:
+```
+aws_key_pair.my_keypair: Creating...
+aws_security_group.allow_ssh: Creating...
+aws_key_pair.my_keypair: Creation complete after 1s [id=my_keypair]
+aws_security_group.allow_ssh: Creation complete after 5s [id=sg-074438b2724096398]
+aws_instance.test_ec2_server_becode: Creating...
+aws_instance.test_ec2_server_becode: Creation complete after 34s [id=i-0f7fbdb62c8b0777c]
+aws_eip.ec2_public_ip: Creating...
+aws_eip.ec2_public_ip: Creation complete after 1s [id=eipalloc-08c46338a60e6b9f4]
 
-6. Run `terraform apply` to apply the changes. You will be prompted to confirm that you want to make the changes.
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
 
-7. ⚠️ ⚠️ ⚠️ When you're done with the resources, run `terraform destroy` to clean up. ⚠️ ⚠️ ⚠️
+Outputs:
 
-**Note:** Always double-check the changes during the `plan` step to ensure you are making the changes you intend, and always clean up your resources when you're done to avoid unnecessary AWS charges.
+ip_address = "XX.XX.X.XXX"
+```
+
+You can now see the resources' state with the command:
+
+```bash
+terraform state list
+```
+
+With an output like:
+
+```
+data.aws_ami.amazon_linux_2
+aws_instance.test_ec2_server_becode
+```
+
+And see the details of the resources with the command:
+
+```bash
+terraform show
+```
+
+Finally, you can connect to your instance with the command:
+
+```bash
+# ec2-user is the default user for Amazon Linux 2 AMI
+ssh -i my_keypair ec2-user@XX.XX.X.XXX
+```
+
+When you are done with your tests, **don't forget to delete the resources** with the command:
+
+```bash
+terraform destroy
+```
+
+
+## Documentation
+
+You can read the complete official documentation here: 
+[Terraforn aws ec2 documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance).
+
+# CLI AWS EC2 Instance
+
+If we wanted to do the same with aws cli, we would have to do the following:
+
+## Create the VPC
+```bash
+aws ec2 create-vpc --cidr-block 10.0.0.0/16
+```
+In this command, `--cidr-block 10.0.0.0/16` specifies the **IPv4 network range** for the VPC in CIDR notation. This example creates a VPC with a size `/16` CIDR *(10.0.0.0 - 10.0.255.255)*.
+
+This command will return a JSON response that includes the ID of the new VPC (in the Vpc -> VpcId field), among other information.
+
+You can then use this VPC ID in the following `create-security-group` command.
+
+## Create a security group
+
+```bash
+# Create a security group
+aws ec2 create-security-group --group-name allow_ssh --description "Security group for SSH access" --vpc-id vpc-xxxxxxxx
+# Add a rule to the security group
+aws ec2 authorize-security-group-ingress --group-id sg-xxxxxxxx --protocol tcp --port 22 --cidr 0.0.0.0/0
+```
+
+
+## Create an instance
+
+```bash
+aws ec2 run-instances --image-id ami-xxxxxxxx --count 1 --instance-type t2.micro --key-name my_keypair --security-group-ids sg-xxxxxxxx
+```
+
+## Create an elastic IP
+This command will output the allocation ID of the new Elastic IP address.
+```bash
+aws ec2 allocate-address --domain vpc
+```
+Associate the Elastic IP address with the instance:
+```bash
+aws ec2 associate-address --instance-id i-xxxxxxxx --allocation-id eipalloc-xxxxxxxx
+```
+
+Note that the AWS CLI commands are more imperative and less declarative compared to Terraform. This means you need to manage the dependencies (like making sure the security group is created before launching the instance) yourself. In Terraform, you declare your desired state, and Terraform figures out the dependencies and creates the resources in the correct order.
