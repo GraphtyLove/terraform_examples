@@ -11,6 +11,7 @@ This repository contains examples of Terraform configurations for various deploy
 ## Examples list
 
 - [AWS ec2](./aws_ec2/README.md)
+- [AWS s3](./aws_s3/README.md)
 
 ## Files
 

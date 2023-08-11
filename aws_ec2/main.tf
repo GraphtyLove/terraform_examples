@@ -14,7 +14,7 @@ terraform {
 
 # Provider configuration
 provider "aws" {
-  region = var.aws_region
+  region     = var.aws_region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 }
@@ -64,8 +64,12 @@ resource "aws_instance" "test_ec2_server_becode" {
   # Add the security group we created to the ec2
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
+    root_block_device {
+    volume_type = "gp2"  # General Purpose SSD
+    volume_size = var.disk_space_in_gb    # 50GB
+  }
 
-  # Tags are used to recognize you resources
+  # Tags are used to recognize your resources
   tags = {
     contact = "maxim@becode.org"
     project = "learning_terraform"

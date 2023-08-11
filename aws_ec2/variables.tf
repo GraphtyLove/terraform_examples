@@ -18,5 +18,11 @@ variable "aws_secret_key" {
 variable "ec2_instance_type" {
     description = "The instance type to be used for the EC2. This will determine the VM's specs."
     type = string
-    default = "t2.micro"
+    default = "t3.medium"
+}
+
+variable "disk_space_in_gb" {
+  description = "How much disk space in GB to allocate for the EC2 instance."
+  type        = number
+  default     = 50
 }
